@@ -8,6 +8,17 @@ The goal of this assignment is to compute the **Jaccard Similarity** between pai
 3. Computes the **Jaccard Similarity** between document pairs.  
 4. Outputs document pairs with similarity **above 50%**.  
 
+# Approach and Implementation 
+This project calculates the similarity between different text documents using Hadoop MapReduce. We use a method called Jaccard Similarity to compare the documents based on the words they contain. The formula is:
+Jaccard Similarity (A, B)= ∣A∩B∣ / ∣A∪B∣ 
+The Mapper reads each document and breaks it into words. It then sends each document and its words as pairs to the next step. For example, it might send (Document1, "word1") and (Document1, "word2").
+The Reducer takes all the words for each document and compares them with the words from other documents. It then calculates the Jaccard Similarity between pairs of documents and sends the result.
+
+# Challenges faced
+​I started by practicing with simple MapReduce tasks and gradually worked my way up to solving this problem. I also tested it with small files before trying larger ones.
+I split the input files into smaller parts and processed them in steps. I also adjusted the memory settings in Hadoop to handle bigger files.
+
+This project helped me understand how to use Hadoop MapReduce to solve real-world problems. I learned how to break a big task into smaller steps, process large datasets, and use the output to calculate something useful, like document similarity.
 ---
 
 ### **📥 Example Input**  
@@ -92,6 +103,7 @@ The output should show the Jaccard Similarity between document pairs in the foll
 ```
 
 ---
+# step-by-step instructions
 
 ### **🛠 Environment Setup: Running Hadoop in Docker**  
 
@@ -108,12 +120,6 @@ docker-compose up -d
 ```  
 This will start the Hadoop NameNode, DataNode, and ResourceManager services.  
 
-#### **Step 3: Access the Hadoop Container**  
-Once the cluster is running, enter the **Hadoop master node** container:  
-```sh
-docker exec -it hadoop-master /bin/bash
-```
-
 ---
 
 ### **📦 Building and Running the MapReduce Job with Maven**  
@@ -125,10 +131,38 @@ mvn clean package
 ```  
 This will generate a JAR file inside the `target` directory.  
 
-#### **Step 2: Copy the JAR File to the Hadoop Container**  
+#### **Step 2: Move JAR File to Shared Folder
+Move the generated JAR file to a shared folder for easy access:
+```sh
+mv target/*.jar shared-folder/code/
+```
+
+#### **Step 3: Copy the JAR File to the Hadoop Container**  
 Move the compiled JAR into the running Hadoop container:  
 ```sh
-docker cp target/similarity.jar hadoop-master:/opt/hadoop-3.2.1/share/hadoop/mapreduce/similarity.jar
+docker cp input/shared-folder/code/DocumentSimilarity-0.0.1-SNAPSHOT.jar resourcemanager:/opt/hadoop-3.2.1/share/hadoop/mapreduce/
+```
+
+#### **Step 4: Copy the Dataset to Docker Container**  
+Copy the dataset to the Hadoop ResourceManager container:
+```sh
+docker cp input/input.txt resourcemanager:/opt/hadoop-3.2.1/share/hadoop/mapreduce/
+```
+
+---
+
+### ** Connect to Docker Container**  
+
+#### **Step 1: Connect to Docker Container**  
+Access the Hadoop ResourceManager container:  
+```sh
+docker exec -it resourcemanager /bin/bash
+```
+
+#### **Step 2: Navigate to the Hadoop directory:**  
+Copy your local dataset into the Hadoop cluster’s HDFS:  
+```sh
+cd /opt/hadoop-3.2.1/share/hadoop/mapreduce/
 ```
 
 ---
@@ -138,13 +172,13 @@ docker cp target/similarity.jar hadoop-master:/opt/hadoop-3.2.1/share/hadoop/map
 #### **Step 1: Create an Input Directory in HDFS**  
 Inside the Hadoop container, create the directory where input files will be stored:  
 ```sh
-hdfs dfs -mkdir -p /input
+hadoop fs -mkdir -p /input/dataset
 ```
 
 #### **Step 2: Upload Dataset to HDFS**  
 Copy your local dataset into the Hadoop cluster’s HDFS:  
 ```sh
-hdfs dfs -put /path/to/local/input/* /input/
+hadoop fs -put ./input.txt /input/dataset
 ```
 
 ---
@@ -153,7 +187,7 @@ hdfs dfs -put /path/to/local/input/* /input/
 
 Run the Hadoop job using the JAR file inside the container:  
 ```sh
-hadoop jar similarity.jar DocumentSimilarityDriver /input /output_similarity /output_final
+hadoop jar /opt/hadoop-3.2.1/share/hadoop/mapreduce/DocumentSimilarity-0.0.1-SNAPSHOT.jar com.example.controller.DocumentSimilarityDriver /input/dataset/input.txt /output
 ```
 
 ---
@@ -167,6 +201,6 @@ hdfs dfs -cat /output_final/part-r-00000
 
 If you want to download the output to your local machine:  
 ```sh
-hdfs dfs -get /output_final /path/to/local/output
+docker cp resourcemanager:/opt/hadoop-3.2.1/share/hadoop/mapreduce/output/ shared-folder/output/
 ```
 ---

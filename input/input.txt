@@ -1,0 +1,4 @@
+Document1 Hadoop is a framework for distributed storage and processing of big data
+Document2 Apache Spark is an open-source distributed computing system
+Document3 Machine learning and big data go hand in hand for insights
+Document4 Distributed systems enable scalable computing for large datasets
